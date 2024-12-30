@@ -16,12 +16,13 @@ const key keyer = "versioning"
 
 // Options represents the configuration settings for the [Versioning] middleware component, including customizable server and header options.
 type Options struct {
+	// API specifies the API version or identifier used by the [Versioning] middleware component.
 	API string
 
+	// Service represents the version of the service associated with the [Versioning] middleware component.
 	Service string
 
-	// Warnings specifies whether a warning log message should be logged in the [Versioning] middleware component's [Server.Handler] function. Defaults to true. Warnings are only emitted
-	// if the [Options.Name] or [Options.Header] values contain an empty string, and therefore will skip updating any response header(s).
+	// Warnings specifies whether a warning log message should be logged in the [Versioning] middleware component's [Versioning.Handler] function. Defaults to false.
 	Warnings bool
 }
 
@@ -44,7 +45,7 @@ func (v *Versioning) Settings(configuration ...func(o *Options)) middleware.Conf
 		v.options = &Options{
 			API:      "",
 			Service:  "",
-			Warnings: true,
+			Warnings: false,
 		}
 	}
 
