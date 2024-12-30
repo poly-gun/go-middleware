@@ -15,46 +15,44 @@ import (
 	"github.com/poly-gun/go-middleware/middleware/authentication"
 )
 
-var signer []byte = []byte("mHTuL3Xko1FKxqxEa3WFrVXyfQEOsfsODyusTDgD9F4")
+func Test(t *testing.T) {
+	var verify = func(ctx context.Context, t string) (*jwt.Token, error) {
+		token, e := jwt.Parse(t, func(token *jwt.Token) (interface{}, error) {
+			method, ok := token.Method.(*jwt.SigningMethodHMAC)
+			if !ok {
+				return nil, jwt.ErrTokenSignatureInvalid
+			}
 
-func verify(ctx context.Context, t string) (*jwt.Token, error) {
-	token, e := jwt.Parse(t, func(token *jwt.Token) (interface{}, error) {
-		method, ok := token.Method.(*jwt.SigningMethodHMAC)
-		if !ok {
-			return nil, jwt.ErrTokenSignatureInvalid
+			_ = method
+
+			return []byte("mHTuL3Xko1FKxqxEa3WFrVXyfQEOsfsODyusTDgD9F4"), nil
+		})
+
+		if e != nil {
+			slog.WarnContext(ctx, "Error Parsing JWT Token", slog.String("error", e.Error()), slog.String("jwt", t))
+			return nil, e
 		}
 
-		_ = method
+		switch {
+		case token.Valid:
+			slog.DebugContext(ctx, "Basic Token Parsing was Successful - Vetting Additional Claims")
 
-		return signer, nil
-	})
+			return token, nil
+		case errors.Is(e, jwt.ErrTokenMalformed):
+			slog.WarnContext(ctx, "Unable to Verify Malformed String as JWT Token", slog.String("error", e.Error()))
+		case errors.Is(e, jwt.ErrTokenSignatureInvalid):
+			slog.WarnContext(ctx, "Invalid JWT Signature", slog.String("error", e.Error()))
+		case errors.Is(e, jwt.ErrTokenExpired):
+			slog.WarnContext(ctx, "Expired JWT Token", slog.String("error", e.Error()))
+		case errors.Is(e, jwt.ErrTokenNotValidYet):
+			slog.WarnContext(ctx, "Received a Future, Valid JWT Token", slog.String("error", e.Error()))
+		default:
+			slog.ErrorContext(ctx, "Unknown Error While Attempting to Validate JWT Token", slog.String("error", e.Error()))
+		}
 
-	if e != nil {
-		slog.WarnContext(ctx, "Error Parsing JWT Token", slog.String("error", e.Error()), slog.String("jwt", t))
 		return nil, e
 	}
 
-	switch {
-	case token.Valid:
-		slog.DebugContext(ctx, "Basic Token Parsing was Successful - Vetting Additional Claims")
-
-		return token, nil
-	case errors.Is(e, jwt.ErrTokenMalformed):
-		slog.WarnContext(ctx, "Unable to Verify Malformed String as JWT Token", slog.String("error", e.Error()))
-	case errors.Is(e, jwt.ErrTokenSignatureInvalid):
-		slog.WarnContext(ctx, "Invalid JWT Signature", slog.String("error", e.Error()))
-	case errors.Is(e, jwt.ErrTokenExpired):
-		slog.WarnContext(ctx, "Expired JWT Token", slog.String("error", e.Error()))
-	case errors.Is(e, jwt.ErrTokenNotValidYet):
-		slog.WarnContext(ctx, "Received a Future, Valid JWT Token", slog.String("error", e.Error()))
-	default:
-		slog.ErrorContext(ctx, "Unknown Error While Attempting to Validate JWT Token", slog.String("error", e.Error()))
-	}
-
-	return nil, e
-}
-
-func Test(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		datum := map[string]interface{}{
 			"Key-1": "Value-1",
