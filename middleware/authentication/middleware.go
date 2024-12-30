@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -132,8 +133,14 @@ func (a *Authentication) Handler(next http.Handler) http.Handler {
 				slog.WarnContext(ctx, message)
 				http.Error(w, message, http.StatusUnauthorized)
 				return
+			case errors.Is(e, jwt.ErrTokenInvalidAudience):
+				const message = "Invalid Target Service (Audience)"
+
+				slog.WarnContext(ctx, message)
+				http.Error(w, message, http.StatusForbidden)
+				return
 			default:
-				slog.ErrorContext(ctx, "Unhandled JWT Error", slog.String("error", e.Error()))
+				slog.ErrorContext(ctx, "Unhandled JWT Error", slog.String("error", e.Error()), slog.String("error-type", reflect.TypeOf(e).String()))
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
