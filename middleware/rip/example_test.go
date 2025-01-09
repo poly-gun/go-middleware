@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/poly-gun/go-middleware/middleware/rip"
 )
 
 func Example() {
@@ -15,10 +17,10 @@ func Example() {
 		ctx := r.Context()
 
 		// Usage of the middleware's context value.
-		value := useragent.Value(ctx)
+		value := rip.Value(ctx)
 
 		datum := map[string]interface{}{
-			"user-agent": value,
+			"rip": value,
 		}
 
 		defer json.NewEncoder(w).Encode(datum)
@@ -29,7 +31,7 @@ func Example() {
 	})
 
 	// Wrap the mux instance with the user-agent middleware.
-	server := httptest.NewServer(useragent.New().Handler(mux))
+	server := httptest.NewServer(rip.New().Handler(mux))
 
 	defer server.Close()
 
@@ -41,8 +43,8 @@ func Example() {
 		panic(e)
 	}
 
-	// Set a user-agent as the request from a go httptest server instance includes a potentially non-deterministic value (e.g. "Go-http-client/1.1").
-	request.Header.Set("User-Agent", "Go-HTTP-Testing-Client")
+	// Set a rip header as the request from a go httptest server instance doesn't include such header(s).
+	request.Header.Set("X-Forwarded-For", "123.123.123.123")
 
 	response, e := client.Do(request)
 	if e != nil {
@@ -62,5 +64,5 @@ func Example() {
 
 	fmt.Println(string(body))
 
-	// Output: {"user-agent":"Go-HTTP-Testing-Client"}
+	// Output: {"rip":"123.123.123.123"}
 }

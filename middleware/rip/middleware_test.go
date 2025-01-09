@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/poly-gun/go-middleware/middleware/rip"
 )
 
 func Test(t *testing.T) {
@@ -38,7 +40,7 @@ func Test(t *testing.T) {
 
 			slog.SetDefault(logger)
 
-			server := httptest.NewServer(useragent.New().Handler(handler))
+			server := httptest.NewServer(rip.New().Handler(handler))
 
 			defer server.Close()
 
@@ -74,7 +76,7 @@ func Test(t *testing.T) {
 
 			slog.SetDefault(logger)
 
-			server := httptest.NewServer(useragent.New().Settings(func(o *useragent.Options) { o.Level = slog.LevelInfo }).Handler(handler))
+			server := httptest.NewServer(rip.New().Settings(func(o *rip.Options) { o.Level = slog.LevelInfo }).Handler(handler))
 
 			defer server.Close()
 
@@ -118,7 +120,7 @@ func Test(t *testing.T) {
 
 			ctx := context.Background()
 
-			value := useragent.Value(ctx)
+			value := rip.Value(ctx)
 
 			if value != "" {
 				t.Errorf("Unexpected Non-Default Context Value Received: %v", value)
@@ -130,11 +132,11 @@ func Test(t *testing.T) {
 		t.Run("User-Specified-Value", func(t *testing.T) {
 			t.Parallel()
 
-			const v = "Test-User-Agent"
+			const v = "123.123.123.123"
 
 			ctx := context.WithValue(context.Background(), "x-testing-key", v)
 
-			value := useragent.Value(ctx)
+			value := rip.Value(ctx)
 
 			if value != v {
 				t.Errorf("Unexpected Context Value Received: %v, Expected: %s", value, v)
@@ -159,7 +161,7 @@ func Test(t *testing.T) {
 
 			ctx := context.Background()
 
-			useragent.Value(ctx)
+			rip.Value(ctx)
 
 			var message map[string]interface{}
 			if e := json.Unmarshal(buffer.Bytes(), &message); e != nil {
@@ -184,7 +186,7 @@ func Test(t *testing.T) {
 		t.Run("Context-Key-Value-No-Log-Message", func(t *testing.T) {
 			t.Parallel()
 
-			const v = "Test-User-Agent"
+			const v = "123.123.123.123"
 
 			var buffer bytes.Buffer
 			logger := slog.New(slog.NewJSONHandler(&buffer, &slog.HandlerOptions{
@@ -197,7 +199,7 @@ func Test(t *testing.T) {
 
 			ctx := context.WithValue(context.Background(), "x-testing-key", v)
 
-			useragent.Value(ctx)
+			rip.Value(ctx)
 
 			if buffer.String() != "" {
 				t.Errorf("Unexpected Log Message: %s", buffer.String())
@@ -207,7 +209,7 @@ func Test(t *testing.T) {
 		t.Run("Context-Key-Value-Testing-Trace-Log-Message", func(t *testing.T) {
 			t.Parallel()
 
-			const v = "Test-User-Agent"
+			const v = "123.123.123.123"
 
 			var buffer bytes.Buffer
 			logger := slog.New(slog.NewJSONHandler(&buffer, &slog.HandlerOptions{
@@ -220,7 +222,7 @@ func Test(t *testing.T) {
 
 			ctx := context.WithValue(context.Background(), "x-testing-key", v)
 
-			useragent.Value(ctx)
+			rip.Value(ctx)
 
 			if buffer.String() == "" {
 				t.Errorf("Expected a Trace Testing Log Message")

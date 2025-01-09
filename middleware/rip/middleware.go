@@ -14,14 +14,16 @@ type keyer string
 // key is the package's unexported context key. Only through the use of [Value] can the context's value be derived.
 const key keyer = "real-ip"
 
-var trueClientIP = http.CanonicalHeaderKey("True-Client-IP")
-var xForwardedFor = http.CanonicalHeaderKey("X-Forwarded-For")
-var xRealIP = http.CanonicalHeaderKey("X-Real-IP")
+const (
+	trueClientIP  = "True-Client-IP"
+	xForwardedFor = "X-Forwarded-For"
+	xRealIP       = "X-Real-IP"
+)
 
 // Options represents the configuration settings for the [Server] middleware component.
 type Options struct {
 	// Level specifies whether a log message should be logged in the [Server] middleware component's [Server.Handler] function. Default is nil. A value of nil
-	// causes the [Server.Handler] to skip logging of the computed real-ip address from the client's request. See the [slog.Leveler] interface for additional information.
+	// causes the [Server.Handler] to skip logging of the ip-related header(s), entirely. See the [slog.Leveler] interface for additional information.
 	Level slog.Leveler
 }
 
@@ -50,22 +52,30 @@ func (s *Server) Settings(configuration ...func(o *Options)) middleware.Configur
 	return s
 }
 
-// Handler applies middleware settings to modify the request context and set response headers. It forwards the request to the next handler in the chain.
+// Handler applies middleware settings to modify the request context. It forwards the request to the next handler in the chain.
 func (s *Server) Handler(next http.Handler) http.Handler {
 	s.Settings() // Ensure the options field isn't nil.
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.
 		ctx := r.Context()
 
-		// Extract user agent from the request header.
-		ua := r.Header.Get("User-Agent")
+		var value string
+
+		switch {
+		case r.Header.Get(trueClientIP) != "":
+			value = r.Header.Get(trueClientIP)
+		case r.Header.Get(xForwardedFor) != "":
+			value = r.Header.Get(xForwardedFor)
+		case r.Header.Get(xRealIP) != "":
+			value = r.Header.Get(xRealIP)
+		}
+
 		if v := s.options.Level; v != nil {
-			slog.Log(ctx, v.Level(), "User-Agent Middleware, Header", slog.String("value", ua))
+			slog.Log(ctx, v.Level(), "X-Real-IP Middleware", slog.String("value", value))
 		}
 
 		// Store user agent in the context.
-		ctx = context.WithValue(ctx, key, ua)
+		ctx = context.WithValue(ctx, key, value)
 
 		// Pass the request along with the new context.
 		next.ServeHTTP(w, r.WithContext(ctx))
