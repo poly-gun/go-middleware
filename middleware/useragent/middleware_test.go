@@ -30,7 +30,7 @@ func Test(t *testing.T) {
 	})
 
 	t.Run("Middleware", func(t *testing.T) {
-		t.Run("Emitted-Default-Warning", func(t *testing.T) {
+		t.Run("No-Emitted-Default-Log-Message", func(t *testing.T) {
 			var buffer bytes.Buffer
 			logger := slog.New(slog.NewJSONHandler(&buffer, &slog.HandlerOptions{
 				AddSource:   true,
@@ -50,9 +50,6 @@ func Test(t *testing.T) {
 				t.Fatalf("Unexpected Error While Generating Request: %v", e)
 			}
 
-			// Unset the header to ensure the testing client doesn't include it.
-			request.Header.Del("User-Agent")
-
 			response, e := client.Do(request)
 			if e != nil {
 				t.Fatalf("Unexpected Error While Generating Response: %v", e)
@@ -60,27 +57,14 @@ func Test(t *testing.T) {
 
 			defer response.Body.Close()
 
-			var message map[string]interface{}
-			if e := json.Unmarshal(buffer.Bytes(), &message); e != nil {
-				t.Fatalf("Fatal, Unexpected Error While Unmarshalling Log Message: %v", e)
-			}
-
-			if v, ok := message["level"]; ok {
-				if typecast, valid := v.(string); valid {
-					if typecast == (slog.LevelWarn).String() {
-						t.Logf("Successful, Expected Log-Level Level Achieved")
-					} else {
-						t.Errorf("Unexpected Log-Level Level: %s", typecast)
-					}
-				} else {
-					t.Errorf("Unable to Typecast Level to String Type: %v", v)
-				}
+			if buffer.String() != "" {
+				t.Errorf("Unexpected Log Message Emitted: %s", buffer.String())
 			} else {
-				t.Errorf("No Valid Level Key Found: %v", message)
+				t.Logf("No Logs Received")
 			}
 		})
 
-		t.Run("No-Emitted-Warning", func(t *testing.T) {
+		t.Run("Emitted-Log", func(t *testing.T) {
 			t.Parallel()
 
 			var buffer bytes.Buffer
@@ -92,7 +76,7 @@ func Test(t *testing.T) {
 
 			slog.SetDefault(logger)
 
-			server := httptest.NewServer(useragent.New().Settings(func(o *useragent.Options) { o.Warnings = false }).Handler(handler))
+			server := httptest.NewServer(useragent.New().Settings(func(o *useragent.Options) { o.Level = slog.LevelInfo }).Handler(handler))
 
 			defer server.Close()
 
@@ -109,10 +93,23 @@ func Test(t *testing.T) {
 
 			defer response.Body.Close()
 
-			if buffer.String() != "" {
-				t.Errorf("Unexpected Log-Level Level Achieved: %s", buffer.String())
+			var message map[string]interface{}
+			if e := json.Unmarshal(buffer.Bytes(), &message); e != nil {
+				t.Fatalf("Fatal, Unexpected Error While Unmarshalling Log Message: %v\n%s", e, buffer.String())
+			}
+
+			if v, ok := message["level"]; ok {
+				if typecast, valid := v.(string); valid {
+					if typecast == (slog.LevelInfo).String() {
+						t.Logf("Successful, Expected Log-Level Level Achieved")
+					} else {
+						t.Errorf("Unexpected Log-Level Level: %s", typecast)
+					}
+				} else {
+					t.Errorf("Unable to Typecast Level to String Type: %v", v)
+				}
 			} else {
-				t.Logf("No Warnings Received")
+				t.Errorf("No Valid Level Key Found: %v", message)
 			}
 		})
 	})

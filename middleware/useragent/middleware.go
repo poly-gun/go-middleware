@@ -16,9 +16,9 @@ const key keyer = "user-agent"
 
 // Options represents the configuration settings for the [Server] middleware component.
 type Options struct {
-	// Warnings specifies whether a warning log message should be logged in the [Server] middleware component's [Server.Handler] function. Defaults to true. Warnings are only emitted
-	// if the user-agent cannot be found in the request headers.
-	Warnings bool
+	// Level specifies whether a log message should be logged in the [Server] middleware component's [Server.Handler] function. Default is nil. A value of nil
+	// causes the [Server.Handler] to skip logging of the user-agent header entirely. See the [slog.Leveler] interface for additional information.
+	Level slog.Leveler
 }
 
 // Server represents a middleware component that applies configurable [Options] settings to HTTP requests. It
@@ -33,7 +33,7 @@ type Server struct {
 func (s *Server) Settings(configuration ...func(o *Options)) middleware.Configurable[Options] {
 	if s.options == nil {
 		s.options = &Options{
-			Warnings: true,
+			Level: nil,
 		}
 	}
 
@@ -55,9 +55,8 @@ func (s *Server) Handler(next http.Handler) http.Handler {
 
 		// Extract user agent from the request header.
 		ua := r.Header.Get("User-Agent")
-
-		if ua == "" && s.options.Warnings {
-			slog.WarnContext(ctx, "User-Agent Header Not Found", slog.String("value", ua))
+		if v := s.options.Level; v != nil {
+			slog.Log(ctx, v.Level(), "User-Agent Middleware, Header", slog.String("value", ua))
 		}
 
 		// Store user agent in the context.
