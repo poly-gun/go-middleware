@@ -57,7 +57,7 @@ func (s *Server) Handler(next http.Handler) http.Handler {
 		ua := r.Header.Get("User-Agent")
 
 		if ua == "" && s.options.Warnings {
-			slog.WarnContext(ctx, "User-Agent Header Not Found")
+			slog.WarnContext(ctx, "User-Agent Header Not Found", slog.String("value", ua))
 		}
 
 		// Store user agent in the context.

@@ -50,6 +50,9 @@ func Test(t *testing.T) {
 				t.Fatalf("Unexpected Error While Generating Request: %v", e)
 			}
 
+			// Unset the header to ensure the testing client doesn't include it.
+			request.Header.Del("User-Agent")
+
 			response, e := client.Do(request)
 			if e != nil {
 				t.Fatalf("Unexpected Error While Generating Response: %v", e)
