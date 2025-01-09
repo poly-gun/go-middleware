@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/poly-gun/go-middleware"
 )
@@ -68,6 +69,12 @@ func (s *Server) Handler(next http.Handler) http.Handler {
 			value = r.Header.Get(xForwardedFor)
 		case r.Header.Get(xRealIP) != "":
 			value = r.Header.Get(xRealIP)
+		}
+
+		if strings.Contains(value, ",") {
+			values := strings.Split(value, ",")
+
+			value = values[0]
 		}
 
 		if v := s.options.Level; v != nil {
