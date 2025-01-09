@@ -17,7 +17,7 @@ const key keyer = "envoy"
 
 // Options represents the configuration settings for the [Envoy] middleware component.
 type Options struct {
-	// Debug specifies whether a request containing envoy-related proxy headers will include log message(s). Defaults to true.
+	// Debug specifies whether a request containing envoy-related proxy headers will include log message(s). Defaults to false.
 	Debug bool
 }
 
