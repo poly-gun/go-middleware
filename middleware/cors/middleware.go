@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"strings"
 
 	external "github.com/rs/cors"
 
@@ -84,26 +83,26 @@ func (c *CORS) Handler(next http.Handler) http.Handler {
 			ctx = context.WithValue(ctx, key, value)
 		}
 
-		{
-			switch {
-			case w.Header().Get("Access-Control-Allow-Headers") == "":
-				w.Header().Set("Access-Control-Allow-Headers", strings.Join(internals.AllowedHeaders, ", "))
-				fallthrough
-			case w.Header().Get("Access-Control-Allow-Methods") == "":
-				w.Header().Set("Access-Control-Allow-Methods", strings.Join(internals.AllowedMethods, ", "))
-				fallthrough
-			case w.Header().Get("Access-Control-Expose-Headers") == "":
-				w.Header().Set("Access-Control-Expose-Headers", "*")
-				fallthrough
-			default:
-				// ...
-			}
-		}
+		// {
+		// 	switch {
+		// 	case w.Header().Get("Access-Control-Allow-Headers") == "":
+		// 		w.Header().Set("Access-Control-Allow-Headers", strings.Join(internals.AllowedHeaders, ", "))
+		// 		fallthrough
+		// 	case w.Header().Get("Access-Control-Allow-Methods") == "":
+		// 		w.Header().Set("Access-Control-Allow-Methods", strings.Join(internals.AllowedMethods, ", "))
+		// 		fallthrough
+		// 	case w.Header().Get("Access-Control-Expose-Headers") == "":
+		// 		w.Header().Set("Access-Control-Expose-Headers", "*")
+		// 		fallthrough
+		// 	default:
+		// 		// ...
+		// 	}
+		// }
 
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
+		// if r.Method == http.MethodOptions {
+		// 	w.WriteHeader(http.StatusNoContent)
+		// 	return
+		// }
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
