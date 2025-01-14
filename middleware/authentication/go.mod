@@ -6,5 +6,5 @@ replace github.com/poly-gun/go-middleware => ../../
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
-	github.com/poly-gun/go-middleware v1.1.4
+	github.com/poly-gun/go-middleware v1.1.5
 )

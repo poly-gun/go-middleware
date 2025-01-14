@@ -4,4 +4,4 @@ go 1.22.7
 
 replace github.com/poly-gun/go-middleware => ../../
 
-require github.com/poly-gun/go-middleware v1.1.4
+require github.com/poly-gun/go-middleware v1.1.5
