@@ -148,6 +148,12 @@ func (a *Authentication) Handler(next http.Handler) http.Handler {
 				}
 			}
 
+			if jwttoken == nil {
+				slog.WarnContext(ctx, "JWT Token Not Found")
+				http.Error(w, "JWT Token Not Found", http.StatusUnauthorized)
+				return
+			}
+
 			slog.Log(ctx, a.options.Level.Level(), "JWT Token Structure", slog.Any("header(s)", jwttoken.Header), slog.Any("claim(s)", jwttoken.Claims))
 
 			ctx = context.WithValue(ctx, key, &Valuer{
