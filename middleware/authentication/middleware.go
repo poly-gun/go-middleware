@@ -43,7 +43,8 @@ type Authentication struct {
 func (a *Authentication) Settings(configuration ...func(o *Options)) middleware.Configurable[Options] {
 	if a.options == nil {
 		a.options = &Options{
-			Level: (slog.LevelDebug - 4),
+			Level:        (slog.LevelDebug - 4),
+			Verification: nil,
 		}
 	}
 
@@ -106,53 +107,63 @@ func (a *Authentication) Handler(next http.Handler) http.Handler {
 			tokenstring = partials[1]
 		}
 
-		jwttoken, e := a.options.Verification(ctx, tokenstring)
-		if e != nil {
-			switch {
-			case errors.Is(e, jwt.ErrTokenMalformed):
-				const message = "Malformed JWT Token"
+		if a.options.Verification != nil {
+			jwttoken, e := a.options.Verification(ctx, tokenstring)
+			if e != nil {
+				switch {
+				case errors.Is(e, jwt.ErrTokenMalformed):
+					const message = "Malformed JWT Token"
 
-				slog.WarnContext(ctx, message)
-				http.Error(w, message, http.StatusUnauthorized)
-				return
-			case errors.Is(e, jwt.ErrTokenSignatureInvalid):
-				const message = "Invalid JWT Token Signature"
+					slog.WarnContext(ctx, message)
+					http.Error(w, message, http.StatusUnauthorized)
+					return
+				case errors.Is(e, jwt.ErrTokenSignatureInvalid):
+					const message = "Invalid JWT Token Signature"
 
-				slog.WarnContext(ctx, message)
-				http.Error(w, message, http.StatusUnauthorized)
-				return
-			case errors.Is(e, jwt.ErrTokenExpired):
-				const message = "Expired JWT Token"
+					slog.WarnContext(ctx, message)
+					http.Error(w, message, http.StatusUnauthorized)
+					return
+				case errors.Is(e, jwt.ErrTokenExpired):
+					const message = "Expired JWT Token"
 
-				slog.WarnContext(ctx, message)
-				http.Error(w, message, http.StatusUnauthorized)
-				return
-			case errors.Is(e, jwt.ErrTokenNotValidYet):
-				const message = "Invalid Future JWT Token"
+					slog.WarnContext(ctx, message)
+					http.Error(w, message, http.StatusUnauthorized)
+					return
+				case errors.Is(e, jwt.ErrTokenNotValidYet):
+					const message = "Invalid Future JWT Token"
 
-				slog.WarnContext(ctx, message)
-				http.Error(w, message, http.StatusUnauthorized)
-				return
-			case errors.Is(e, jwt.ErrTokenInvalidAudience):
-				const message = "Invalid Target Service (Audience)"
+					slog.WarnContext(ctx, message)
+					http.Error(w, message, http.StatusUnauthorized)
+					return
+				case errors.Is(e, jwt.ErrTokenInvalidAudience):
+					const message = "Invalid Target Service (Audience)"
 
-				slog.WarnContext(ctx, message)
-				http.Error(w, message, http.StatusForbidden)
-				return
-			default:
-				slog.ErrorContext(ctx, "Unhandled JWT Error", slog.String("error", e.Error()), slog.String("error-type", reflect.TypeOf(e).String()))
-				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-				return
+					slog.WarnContext(ctx, message)
+					http.Error(w, message, http.StatusForbidden)
+					return
+				default:
+					slog.ErrorContext(ctx, "Unhandled JWT Error", slog.String("error", e.Error()), slog.String("error-type", reflect.TypeOf(e).String()))
+					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+					return
+				}
 			}
+
+			slog.Log(ctx, a.options.Level.Level(), "JWT Token Structure", slog.Any("header(s)", jwttoken.Header), slog.Any("claim(s)", jwttoken.Claims))
+
+			ctx = context.WithValue(ctx, key, &Valuer{
+				Token: jwttoken,
+			})
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		} else {
+			slog.WarnContext(ctx, "Verification Function is Null")
+
+			ctx = context.WithValue(ctx, key, &Valuer{
+				Token: nil,
+			})
+
+			next.ServeHTTP(w, r.WithContext(ctx))
 		}
-
-		slog.Log(ctx, a.options.Level.Level(), "JWT Token Structure", slog.Any("header(s)", jwttoken.Header), slog.Any("claim(s)", jwttoken.Claims))
-
-		ctx = context.WithValue(ctx, key, &Valuer{
-			Token: jwttoken,
-		})
-
-		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
