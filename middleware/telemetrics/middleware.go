@@ -84,6 +84,9 @@ type Options struct {
 	// 	- "cookie"
 	// 	- "authorization"
 	// 	- "jwt"
+	//	- "true-client-ip"
+	//	- "x-forwarded-for"
+	//	- "x-real-ip"
 	// 	- "x-request-id"
 	// 	- "x-b3-traceid"
 	// 	- "x-b3-spanid"
@@ -155,6 +158,9 @@ func (t *Telemetry) Settings(configuration ...func(o *Options)) middleware.Confi
 				"cookie",
 				"authorization",
 				"jwt",
+				"true-client-ip",
+				"x-forwarded-for",
+				"x-real-ip",
 				"x-request-id",
 				"x-b3-traceid",
 				"x-b3-spanid",
