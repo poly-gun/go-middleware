@@ -86,6 +86,8 @@ func Test(t *testing.T) {
 				t.Fatalf("Unexpected Error While Generating Request: %v", e)
 			}
 
+			request.Header.Set("X-Forwarded-For", "127.0.0.1")
+
 			response, e := client.Do(request)
 			if e != nil {
 				t.Fatalf("Unexpected Error While Generating Response: %v", e)
