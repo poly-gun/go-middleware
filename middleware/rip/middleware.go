@@ -77,7 +77,7 @@ func (s *Server) Handler(next http.Handler) http.Handler {
 			value = values[0]
 		}
 
-		if v := s.options.Level; v != nil {
+		if v := s.options.Level; v != nil && value != "" {
 			slog.Log(ctx, v.Level(), "X-Real-IP Middleware", slog.String("value", value))
 		}
 
