@@ -17,7 +17,7 @@ import (
 type keyer string
 
 // key is the package's unexported context key. Only through the use of [Value] can the context's value be derived.
-const key keyer = "versioning"
+const key keyer = "authentication"
 
 // Valuer is the context return type relating to the [Authentication] middleware. See the [Value] function for additional details.
 type Valuer struct {
