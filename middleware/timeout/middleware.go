@@ -88,7 +88,7 @@ func (t *Timeout) Handler(next http.Handler) http.Handler {
 			cancel()
 			e := ctx.Err()
 			if errors.Is(e, context.DeadlineExceeded) {
-				http.Error(w, "gateway-timeout", http.StatusGatewayTimeout)
+				w.WriteHeader(http.StatusGatewayTimeout)
 				return
 			}
 		}()
