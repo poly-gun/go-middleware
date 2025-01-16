@@ -70,17 +70,13 @@ func (t *Timeout) Handler(next http.Handler) http.Handler {
 		ctx := r.Context()
 
 		// Update the request context with the applicable key-value pair(s).
-		{
-			ctx = context.WithValue(ctx, key, t.options.Timeout)
-		}
+		ctx = context.WithValue(ctx, key, t.options.Timeout)
 
 		// Set the response headers according to the specification.
-		{
-			if t.options.Header != "" {
-				value := t.options.Timeout.String()
+		if t.options.Header != "" {
+			value := t.options.Timeout.String()
 
-				w.Header().Set(http.CanonicalHeaderKey(t.options.Header), value)
-			}
+			w.Header().Set(http.CanonicalHeaderKey(t.options.Header), value)
 		}
 
 		ctx, cancel := context.WithTimeout(ctx, t.options.Timeout)
