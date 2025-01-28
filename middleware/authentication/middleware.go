@@ -112,38 +112,35 @@ func (a *Authentication) Handler(next http.Handler) http.Handler {
 			if e != nil {
 				switch {
 				case errors.Is(e, jwt.ErrTokenMalformed):
-					const message = "Malformed JWT Token"
-
-					slog.WarnContext(ctx, message)
-					http.Error(w, message, http.StatusUnauthorized)
+					http.Error(w, "Malformed JWT Token", http.StatusUnauthorized)
 					return
 				case errors.Is(e, jwt.ErrTokenSignatureInvalid):
-					const message = "Invalid JWT Token Signature"
-
-					slog.WarnContext(ctx, message)
-					http.Error(w, message, http.StatusUnauthorized)
+					http.Error(w, "Invalid JWT Token Signature", http.StatusUnauthorized)
 					return
 				case errors.Is(e, jwt.ErrTokenExpired):
-					const message = "Expired JWT Token"
-
-					slog.WarnContext(ctx, message)
-					http.Error(w, message, http.StatusUnauthorized)
+					http.Error(w, "Expired JWT Token", http.StatusUnauthorized)
 					return
 				case errors.Is(e, jwt.ErrTokenNotValidYet):
-					const message = "Invalid Future JWT Token"
-
-					slog.WarnContext(ctx, message)
-					http.Error(w, message, http.StatusUnauthorized)
+					http.Error(w, "JWT Token Not Valid Yet", http.StatusUnauthorized)
 					return
 				case errors.Is(e, jwt.ErrTokenInvalidAudience):
-					const message = "Invalid Target Service (Audience)"
-
-					slog.WarnContext(ctx, message)
-					http.Error(w, message, http.StatusForbidden)
+					http.Error(w, "Invalid Audience Claim", http.StatusForbidden)
+					return
+				case errors.Is(e, jwt.ErrTokenRequiredClaimMissing):
+					http.Error(w, "Missing Required Claim(s)", http.StatusForbidden)
+					return
+				case errors.Is(e, jwt.ErrTokenInvalidIssuer):
+					http.Error(w, "Invalid Token Issuer", http.StatusForbidden)
+					return
+				case errors.Is(e, jwt.ErrTokenInvalidId):
+					http.Error(w, "Invalid JTI Session ID", http.StatusForbidden)
+					return
+				case errors.Is(e, jwt.ErrTokenInvalidSubject):
+					http.Error(w, "Invalid JWT Subject", http.StatusForbidden)
 					return
 				default:
 					slog.ErrorContext(ctx, "Unhandled JWT Error", slog.String("error", e.Error()), slog.String("error-type", reflect.TypeOf(e).String()))
-					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+					http.Error(w, "Invalid JWT Exception", http.StatusUnauthorized)
 					return
 				}
 			}
