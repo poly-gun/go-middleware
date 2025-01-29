@@ -112,16 +112,16 @@ func (a *Authentication) Handler(next http.Handler) http.Handler {
 			if e != nil {
 				switch {
 				case errors.Is(e, jwt.ErrTokenMalformed):
-					http.Error(w, "Malformed JWT Token", http.StatusUnauthorized)
+					http.Error(w, "Malformed JWT Token", http.StatusForbidden)
 					return
 				case errors.Is(e, jwt.ErrTokenSignatureInvalid):
-					http.Error(w, "Invalid JWT Token Signature", http.StatusUnauthorized)
+					http.Error(w, "Invalid JWT Token Signature", http.StatusForbidden)
 					return
 				case errors.Is(e, jwt.ErrTokenExpired):
-					http.Error(w, "Expired JWT Token", http.StatusUnauthorized)
+					http.Error(w, "Expired JWT Token", http.StatusForbidden)
 					return
 				case errors.Is(e, jwt.ErrTokenNotValidYet):
-					http.Error(w, "JWT Token Not Valid Yet", http.StatusUnauthorized)
+					http.Error(w, "JWT Token Not Valid Yet", http.StatusForbidden)
 					return
 				case errors.Is(e, jwt.ErrTokenInvalidAudience):
 					http.Error(w, "Invalid Audience Claim", http.StatusForbidden)
@@ -138,9 +138,12 @@ func (a *Authentication) Handler(next http.Handler) http.Handler {
 				case errors.Is(e, jwt.ErrTokenInvalidSubject):
 					http.Error(w, "Invalid JWT Subject", http.StatusForbidden)
 					return
+				case errors.Is(e, jwt.ErrTokenUnverifiable):
+					http.Error(w, "Unverifiable JWT Token", http.StatusForbidden)
+					return
 				default:
 					slog.ErrorContext(ctx, "Unhandled JWT Error", slog.String("error", e.Error()), slog.String("error-type", reflect.TypeOf(e).String()))
-					http.Error(w, "Invalid JWT Exception", http.StatusUnauthorized)
+					http.Error(w, "Unhandled JWT Exception", http.StatusInternalServerError)
 					return
 				}
 			}
